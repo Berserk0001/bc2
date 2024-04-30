@@ -1,0 +1,31 @@
+const sharp = require('sharp');
+const redirect = require('./redirect');
+
+function compress(req, res, input) {
+  const format = req.params.webp ? 'webp' : 'jpeg';
+  let compressionQuality = req.params.quality * 0.05;
+       
+  req.params.quality = Math.ceil(compressionQuality);
+
+
+     sharp(input)
+    .grayscale(req.params.grayscale)
+    .toFormat(format, {
+      quality: req.params.quality,
+      effort: 1
+      
+    })
+    .toBuffer((err, output, info) => {
+      if (err || !info || res.headersSent) {
+        throw new Error(null);
+      }
+
+      res.setHeader('content-type', `image/${format}`);
+      res.setHeader('content-length', info.size);
+      res.setHeader('x-original-size', req.params.originSize);
+      res.setHeader('x-bytes-saved', req.params.originSize - info.size);
+      res.status(200).send(output);
+    });
+}
+
+module.exports = compress;
